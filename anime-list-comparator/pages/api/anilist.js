@@ -10,8 +10,16 @@ export default async function handler(req, res) {
   const query = `
   query ($username: String, $type: MediaType) {
     MediaListCollection(userName: $username, type: $type) {
+      user {
+        name
+        avatar {
+          large
+        }
+      }
       lists {
         entries {
+          status
+          progress
           media {
             id
             title {
@@ -62,10 +70,20 @@ export default async function handler(req, res) {
     }
 
     const lists = json.data.MediaListCollection.lists;
+    const user = json.data.MediaListCollection.user;
     let allItems = [];
 
     lists.forEach((list) => {
       list.entries.forEach((entry) => {
+        // Map AniList status to match our internal format if necessary
+        // AniList status: CURRENT, PLANNING, COMPLETED, DROPPED, PAUSED, REPEATING
+        let mappedStatus = entry.status.toLowerCase();
+        if (mappedStatus === 'current') {
+          mappedStatus = type === 'manga' ? 'reading' : 'watching';
+        } else if (mappedStatus === 'repeating') {
+          mappedStatus = type === 'manga' ? 'reading' : 'watching';
+        }
+
         allItems.push({
           id: entry.media.id,
           title: entry.media.title.english || entry.media.title.romaji,
@@ -73,11 +91,21 @@ export default async function handler(req, res) {
           titleEnglish: entry.media.title.english,
           image: entry.media.coverImage.large,
           url: entry.media.siteUrl,
+          status: mappedStatus,
+          progress: entry.progress || 0,
+          username: user.name,
+          avatar: user.avatar ? user.avatar.large : null,
         });
       });
     });
 
-    res.status(200).json({ items: allItems });
+    res.status(200).json({
+      items: allItems,
+      user: {
+        username: user.name,
+        avatar: user.avatar ? user.avatar.large : null,
+      }
+    });
   } catch (error) {
     console.error('Error fetching AniList data:', error);
     res.status(500).json({ error: 'Failed to fetch AniList data' });
