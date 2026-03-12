@@ -37,7 +37,10 @@ export default function Home() {
       throw new Error(data.error || `Failed to fetch ${user.platform} list for ${user.username}`);
     }
     const data = await res.json();
-    return data.items;
+
+    // Filter out items that are not completed or reading/watching
+    const allowedStatuses = ['completed', 'watching', 'reading'];
+    return data.items.filter(item => allowedStatuses.includes(item.status));
   };
 
   const handleCompare = async () => {
@@ -56,46 +59,62 @@ export default function Home() {
     try {
       const lists = await Promise.all(validUsers.map((user) => fetchUserList(user)));
 
-      // Need to find intersection
-      // First list will be the base list
-      let intersection = [];
+      // We want to find items that are in AT LEAST 2 lists
+      let allItemsFlat = [];
+      lists.forEach((list, listIndex) => {
+        list.forEach(item => {
+          allItemsFlat.push({ ...item, sourceListIndex: listIndex });
+        });
+      });
 
-      lists[0].forEach((item) => {
+      let itemMap = new Map(); // Map of normalized title -> item data + users array
+
+      allItemsFlat.forEach(item => {
         const titleNorm = normalizeTitle(item.title);
         const titleRomajiNorm = item.titleRomaji ? normalizeTitle(item.titleRomaji) : '';
         const titleEnglishNorm = item.titleEnglish ? normalizeTitle(item.titleEnglish) : '';
 
-        // Check if this item exists in ALL other lists
-        let existsInAll = true;
+        // Find if we already have this item in the map (checking all title variants)
+        let foundKey = null;
+        for (const [key, existingItem] of itemMap.entries()) {
+          const eTitleNorm = normalizeTitle(existingItem.title);
+          const eTitleRomajiNorm = existingItem.titleRomaji ? normalizeTitle(existingItem.titleRomaji) : '';
+          const eTitleEnglishNorm = existingItem.titleEnglish ? normalizeTitle(existingItem.titleEnglish) : '';
 
-        for (let i = 1; i < lists.length; i++) {
-          const otherList = lists[i];
-          const found = otherList.some((otherItem) => {
-            const otherTitleNorm = normalizeTitle(otherItem.title);
-            const otherTitleRomajiNorm = otherItem.titleRomaji ? normalizeTitle(otherItem.titleRomaji) : '';
-            const otherTitleEnglishNorm = otherItem.titleEnglish ? normalizeTitle(otherItem.titleEnglish) : '';
-
-            // Match if any normalized title matches
-            return (
-              (titleNorm && (titleNorm === otherTitleNorm || titleNorm === otherTitleRomajiNorm || titleNorm === otherTitleEnglishNorm)) ||
-              (titleRomajiNorm && (titleRomajiNorm === otherTitleNorm || titleRomajiNorm === otherTitleRomajiNorm || titleRomajiNorm === otherTitleEnglishNorm)) ||
-              (titleEnglishNorm && (titleEnglishNorm === otherTitleNorm || titleEnglishNorm === otherTitleRomajiNorm || titleEnglishNorm === otherTitleEnglishNorm))
-            );
-          });
-
-          if (!found) {
-            existsInAll = false;
+          if (
+             (titleNorm && (titleNorm === eTitleNorm || titleNorm === eTitleRomajiNorm || titleNorm === eTitleEnglishNorm)) ||
+             (titleRomajiNorm && (titleRomajiNorm === eTitleNorm || titleRomajiNorm === eTitleRomajiNorm || titleRomajiNorm === eTitleEnglishNorm)) ||
+             (titleEnglishNorm && (titleEnglishNorm === eTitleNorm || titleEnglishNorm === eTitleRomajiNorm || titleEnglishNorm === eTitleEnglishNorm))
+          ) {
+            foundKey = key;
             break;
           }
         }
 
-        if (existsInAll) {
-          // Add to intersection if not already added
-          if (!intersection.some((i) => normalizeTitle(i.title) === titleNorm)) {
-             intersection.push(item);
+        const userDetail = {
+          username: item.username,
+          avatar: item.avatar,
+          status: item.status,
+          progress: item.progress,
+          sourceListIndex: item.sourceListIndex
+        };
+
+        if (foundKey) {
+          // Check if this specific user hasn't been added to this item yet
+          const existing = itemMap.get(foundKey);
+          if (!existing.users.some(u => u.sourceListIndex === item.sourceListIndex)) {
+            existing.users.push(userDetail);
           }
+        } else {
+          itemMap.set(titleNorm || titleRomajiNorm || titleEnglishNorm, {
+            ...item,
+            users: [userDetail]
+          });
         }
       });
+
+      // Filter to only items that have at least 2 users
+      let intersection = Array.from(itemMap.values()).filter(item => item.users.length >= 2);
 
       // Sort alphabetically
       intersection.sort((a, b) => a.title.localeCompare(b.title));
@@ -241,9 +260,38 @@ export default function Home() {
                         )}
                       </div>
                       <div className="p-3 flex-1 flex flex-col">
-                        <h3 className="text-sm font-medium text-gray-900 group-hover:text-indigo-600 line-clamp-2">
+                        <h3 className="text-sm font-medium text-gray-900 group-hover:text-indigo-600 line-clamp-2 mb-2">
                           {item.title}
                         </h3>
+                        <div className="mt-auto flex flex-wrap gap-2">
+                          {item.users.map((u, uIdx) => (
+                            <div key={uIdx} className="relative group/tooltip flex items-center">
+                              {u.avatar ? (
+                                <img
+                                  src={u.avatar}
+                                  alt={u.username}
+                                  className="w-8 h-8 rounded-full border border-gray-300 object-cover"
+                                />
+                              ) : (
+                                <div className="w-8 h-8 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-800 text-xs font-bold border border-indigo-200">
+                                  {u.username.charAt(0).toUpperCase()}
+                                </div>
+                              )}
+                              {/* Tooltip */}
+                              <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 hidden group-hover/tooltip:block z-10 w-max max-w-xs">
+                                <div className="bg-gray-900 text-white text-xs rounded py-1 px-2 shadow-lg">
+                                  <div className="font-bold">{u.username}</div>
+                                  <div>
+                                    {u.status === 'completed'
+                                      ? 'Completed'
+                                      : `${type === 'manga' ? 'Ch' : 'Ep'} ${u.progress}`}
+                                  </div>
+                                </div>
+                                <div className="w-2 h-2 bg-gray-900 transform rotate-45 absolute -bottom-1 left-1/2 -translate-x-1/2"></div>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
                       </div>
                     </a>
                   ))}
