@@ -43,6 +43,53 @@ export default function Home() {
     return data.items.filter(item => allowedStatuses.includes(item.status));
   };
 
+  const handleExportCsv = () => {
+    if (commonItems.length === 0) return;
+
+    const validUsers = users.filter((u) => u.username.trim() !== '');
+
+    const headers = ['Title', 'URL'];
+    validUsers.forEach((u) => {
+      headers.push(`${u.username} Status`);
+      headers.push(`${u.username} Progress`);
+    });
+
+    const csvRows = [];
+    csvRows.push(headers.join(','));
+
+    commonItems.forEach((item) => {
+      const row = [
+        `"${item.title.replace(/"/g, '""')}"`,
+        `"${item.url}"`
+      ];
+
+      validUsers.forEach((u, index) => {
+        const userDetail = item.users.find((iu) => iu.sourceListIndex === index);
+        if (userDetail) {
+          row.push(`"${userDetail.status}"`);
+          row.push(`"${userDetail.progress}"`);
+        } else {
+          row.push('""');
+          row.push('""');
+        }
+      });
+
+      csvRows.push(row.join(','));
+    });
+
+    const csvContent = csvRows.join('\n');
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+
+    const date = new Date().toISOString().split('T')[0];
+    link.setAttribute('href', url);
+    link.setAttribute('download', `common-${type}-${date}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
   const handleCompare = async () => {
     // Validate inputs
     const validUsers = users.filter((u) => u.username.trim() !== '');
@@ -230,9 +277,19 @@ export default function Home() {
 
           {searched && !loading && (
             <div>
-              <h2 className="text-xl font-semibold mb-4 text-gray-800">
-                Common Entries ({commonItems.length})
-              </h2>
+              <div className="flex justify-between items-center mb-4">
+                <h2 className="text-xl font-semibold text-gray-800">
+                  Common Entries ({commonItems.length})
+                </h2>
+                {commonItems.length > 0 && (
+                  <button
+                    onClick={handleExportCsv}
+                    className="px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
+                  >
+                    Export to CSV
+                  </button>
+                )}
+              </div>
               {commonItems.length === 0 ? (
                 <p className="text-gray-500 text-center py-8">No common entries found.</p>
               ) : (
