@@ -48,13 +48,15 @@ export default function Home() {
 
     const validUsers = users.filter((u) => u.username.trim() !== '');
 
-    const headers = ['Title', 'URL'];
+    const headers = ['"Title"', '"URL"'];
     validUsers.forEach((u) => {
-      headers.push(`${u.username} Status`);
-      headers.push(`${u.username} Progress`);
+      headers.push(`"${u.username.replace(/"/g, '""')} Status"`);
+      headers.push(`"${u.username.replace(/"/g, '""')} Progress"`);
     });
 
     const csvRows = [];
+    // Tell Excel explicitly to use comma as the separator
+    csvRows.push('sep=,');
     csvRows.push(headers.join(','));
 
     commonItems.forEach((item) => {
@@ -77,7 +79,8 @@ export default function Home() {
       csvRows.push(row.join(','));
     });
 
-    const csvContent = csvRows.join('\n');
+    // Add BOM so Excel opens it automatically as UTF-8
+    const csvContent = '\uFEFF' + csvRows.join('\n');
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
@@ -88,6 +91,7 @@ export default function Home() {
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
+    URL.revokeObjectURL(url);
   };
 
   const handleCompare = async () => {
