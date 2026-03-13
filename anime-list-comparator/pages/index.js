@@ -57,7 +57,7 @@ export default function Home() {
     });
 
     const csvRows = [];
-    csvRows.push(headers.join(','));
+    csvRows.push(headers.join(';'));
 
     commonItems.forEach((item) => {
       const row = [
@@ -76,10 +76,10 @@ export default function Home() {
         }
       });
 
-      csvRows.push(row.join(','));
+      csvRows.push(row.join(';'));
     });
 
-    const csvContent = csvRows.join('\n');
+    const csvContent = '\uFEFF' + csvRows.join('\n');
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
