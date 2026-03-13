@@ -1,7 +1,9 @@
 import { useState } from 'react';
 import Head from 'next/head';
+import { useDarkMode } from '../hooks/useDarkMode';
 
 export default function Home() {
+  const { isDark, toggleDarkMode, mounted } = useDarkMode();
   const [users, setUsers] = useState([{ username: '', platform: 'mal' }]);
   const [type, setType] = useState('anime');
   const [loading, setLoading] = useState(false);
@@ -177,26 +179,39 @@ export default function Home() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-100 py-10 px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-gray-100 dark:bg-gray-900 py-10 px-4 sm:px-6 lg:px-8 transition-colors duration-200">
       <Head>
         <title>Anime/Manga List Comparator</title>
       </Head>
 
-      <div className="max-w-4xl mx-auto bg-white rounded-lg shadow-xl overflow-hidden">
-        <div className="bg-indigo-600 px-6 py-4">
-          <h1 className="text-2xl font-bold text-white text-center">Anime/Manga List Comparator</h1>
+      <div className="max-w-4xl mx-auto bg-white dark:bg-gray-800 rounded-lg shadow-xl overflow-hidden transition-colors duration-200">
+        <div className="bg-indigo-600 dark:bg-indigo-700 px-6 py-4 flex justify-between items-center transition-colors duration-200">
+          <h1 className="text-2xl font-bold text-white">Anime/Manga List Comparator</h1>
+          {mounted && (
+            <button
+              onClick={toggleDarkMode}
+              className="p-2 rounded-full bg-indigo-500 dark:bg-indigo-600 text-white hover:bg-indigo-400 dark:hover:bg-indigo-500 transition-colors focus:outline-none"
+              aria-label="Toggle Dark Mode"
+            >
+              {isDark ? (
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" /></svg>
+              ) : (
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" /></svg>
+              )}
+            </button>
+          )}
         </div>
 
         <div className="p-6">
           <div className="mb-6 flex justify-center space-x-4">
             <button
-              className={`px-4 py-2 rounded-md font-medium transition-colors ${type === 'anime' ? 'bg-indigo-600 text-white' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'}`}
+              className={`px-4 py-2 rounded-md font-medium transition-colors ${type === 'anime' ? 'bg-indigo-600 text-white' : 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600'}`}
               onClick={() => setType('anime')}
             >
               Anime
             </button>
             <button
-              className={`px-4 py-2 rounded-md font-medium transition-colors ${type === 'manga' ? 'bg-indigo-600 text-white' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'}`}
+              className={`px-4 py-2 rounded-md font-medium transition-colors ${type === 'manga' ? 'bg-indigo-600 text-white' : 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600'}`}
               onClick={() => setType('manga')}
             >
               Manga
@@ -205,21 +220,21 @@ export default function Home() {
 
           <div className="space-y-4 mb-6">
             {users.map((user, index) => (
-              <div key={index} className="flex items-center space-x-4 bg-gray-50 p-4 rounded-md border border-gray-200">
+              <div key={index} className="flex items-center space-x-4 bg-gray-50 dark:bg-gray-700 p-4 rounded-md border border-gray-200 dark:border-gray-600 transition-colors duration-200">
                 <div className="flex-1">
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Username {index + 1}</label>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Username {index + 1}</label>
                   <input
                     type="text"
-                    className="w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 text-black px-3 py-2 border"
+                    className="w-full border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 text-black dark:text-white bg-white dark:bg-gray-800 px-3 py-2 border transition-colors duration-200"
                     placeholder="Enter username"
                     value={user.username}
                     onChange={(e) => handleUserChange(index, 'username', e.target.value)}
                   />
                 </div>
                 <div className="w-32">
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Platform</label>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Platform</label>
                   <select
-                    className="w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 text-black px-3 py-2 border"
+                    className="w-full border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 text-black dark:text-white bg-white dark:bg-gray-800 px-3 py-2 border transition-colors duration-200"
                     value={user.platform}
                     onChange={(e) => handleUserChange(index, 'platform', e.target.value)}
                   >
@@ -231,7 +246,7 @@ export default function Home() {
                   <div className="pt-6">
                     <button
                       onClick={() => handleRemoveUser(index)}
-                      className="text-red-600 hover:text-red-800 focus:outline-none"
+                      className="text-red-600 hover:text-red-800 dark:text-red-400 dark:hover:text-red-300 focus:outline-none transition-colors duration-200"
                       title="Remove user"
                     >
                       <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -247,29 +262,29 @@ export default function Home() {
           <div className="flex justify-between mb-8">
             <button
               onClick={handleAddUser}
-              className="px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+              className="px-4 py-2 border border-gray-300 dark:border-gray-600 shadow-sm text-sm font-medium rounded-md text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 dark:ring-offset-gray-800 transition-colors duration-200"
             >
               + Add User
             </button>
             <button
               onClick={handleCompare}
               disabled={loading}
-              className={`px-6 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 ${loading ? 'opacity-50 cursor-not-allowed' : ''}`}
+              className={`px-6 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors duration-200 ${loading ? 'opacity-50 cursor-not-allowed' : ''}`}
             >
               {loading ? 'Comparing...' : 'Find Common Entries'}
             </button>
           </div>
 
           {error && (
-            <div className="bg-red-50 border-l-4 border-red-400 p-4 mb-6">
+            <div className="bg-red-50 dark:bg-red-900/20 border-l-4 border-red-400 dark:border-red-500 p-4 mb-6 transition-colors duration-200">
               <div className="flex">
                 <div className="flex-shrink-0">
-                  <svg className="h-5 w-5 text-red-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                  <svg className="h-5 w-5 text-red-400 dark:text-red-500" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
                     <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
                   </svg>
                 </div>
                 <div className="ml-3">
-                  <p className="text-sm text-red-700">{error}</p>
+                  <p className="text-sm text-red-700 dark:text-red-400">{error}</p>
                 </div>
               </div>
             </div>
@@ -278,20 +293,20 @@ export default function Home() {
           {searched && !loading && (
             <div>
               <div className="flex justify-between items-center mb-4">
-                <h2 className="text-xl font-semibold text-gray-800">
+                <h2 className="text-xl font-semibold text-gray-800 dark:text-gray-200">
                   Common Entries ({commonItems.length})
                 </h2>
                 {commonItems.length > 0 && (
                   <button
                     onClick={handleExportCsv}
-                    className="px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
+                    className="px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 dark:ring-offset-gray-800 transition-colors duration-200"
                   >
                     Export to CSV
                   </button>
                 )}
               </div>
               {commonItems.length === 0 ? (
-                <p className="text-gray-500 text-center py-8">No common entries found.</p>
+                <p className="text-gray-500 dark:text-gray-400 text-center py-8">No common entries found.</p>
               ) : (
                 <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-6">
                   {commonItems.map((item, idx) => (
@@ -300,9 +315,9 @@ export default function Home() {
                       href={item.url}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="group flex flex-col bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden hover:shadow-md transition-shadow"
+                      className="group flex flex-col bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden hover:shadow-md transition-all"
                     >
-                      <div className="aspect-w-3 aspect-h-4 bg-gray-200 relative">
+                      <div className="aspect-w-3 aspect-h-4 bg-gray-200 dark:bg-gray-700 relative">
                         {item.image ? (
                           <img
                             src={item.image}
@@ -311,13 +326,13 @@ export default function Home() {
                             style={{ minHeight: '200px', maxHeight: '250px' }}
                           />
                         ) : (
-                          <div className="flex items-center justify-center w-full h-full text-gray-400">
+                          <div className="flex items-center justify-center w-full h-full text-gray-400 dark:text-gray-500">
                             No Image
                           </div>
                         )}
                       </div>
                       <div className="p-3 flex-1 flex flex-col">
-                        <h3 className="text-sm font-medium text-gray-900 group-hover:text-indigo-600 line-clamp-2 mb-2">
+                        <h3 className="text-sm font-medium text-gray-900 dark:text-gray-100 group-hover:text-indigo-600 dark:group-hover:text-indigo-400 line-clamp-2 mb-2 transition-colors duration-200">
                           {item.title}
                         </h3>
                         <div className="mt-auto flex flex-wrap gap-2">
@@ -327,16 +342,16 @@ export default function Home() {
                                 <img
                                   src={u.avatar}
                                   alt={u.username}
-                                  className="w-8 h-8 rounded-full border border-gray-300 object-cover"
+                                  className="w-8 h-8 rounded-full border border-gray-300 dark:border-gray-600 object-cover"
                                 />
                               ) : (
-                                <div className="w-8 h-8 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-800 text-xs font-bold border border-indigo-200">
+                                <div className="w-8 h-8 rounded-full bg-indigo-100 dark:bg-indigo-900/50 flex items-center justify-center text-indigo-800 dark:text-indigo-300 text-xs font-bold border border-indigo-200 dark:border-indigo-800/50 transition-colors duration-200">
                                   {u.username.charAt(0).toUpperCase()}
                                 </div>
                               )}
                               {/* Tooltip */}
                               <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 hidden group-hover/tooltip:block z-10 w-max max-w-xs">
-                                <div className="bg-gray-900 text-white text-xs rounded py-1 px-2 shadow-lg">
+                                <div className="bg-gray-900 dark:bg-gray-700 text-white text-xs rounded py-1 px-2 shadow-lg border border-transparent dark:border-gray-600">
                                   <div className="font-bold">{u.username}</div>
                                   <div>
                                     {u.status === 'completed'
